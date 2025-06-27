@@ -1,0 +1,72 @@
+---
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+### Lab 9 Answers
+
+#### Your name here
+
+[This assignment is due by 6:00 p.m. CDT the day of lab. Write your
+answers in the Ans9LastFirst.Rmd and submit the .Rmd and .html to
+Canvas.]{style="color:green;"}
+
+**1.1**Your answer here.
+
+**1.2** Your answer here.
+
+**1.3** Your answer here.
+
+**1.4** Your answer here.
+
+
+**1.5**  *ls -l* (that is the letter "l", not
+the number 1)
+
+Your answer here.
+
+
+
+**1.6**  Your answer here.
+
+**1.7** Your answer here. 
+
+**1.8** Your answer here. 
+
+**1.9**  Your answer here. 
+
+**1.10** Your answer here. 
+
+**2.1** Your answer here. 
+
+**2.2** Your answer here. 
+
+**2.3** Your answer here. 
+
+**2.4** Your answer here. 
+
+**2.5** Your answer here. 
+
+**2.6** Your answer here. 
+
+**2.7** Your answer here. 
+
+**2.8**
+
+```{r}
+#Your code here
+```
+
+**2.9**
+
+```{r}
+#Your code here
+```
+
+Your answer here. 
+
+**2.10** 
+a) Your answer here. 
+
+b) Your answer here.

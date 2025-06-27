@@ -1,0 +1,255 @@
+---
+title: "Lab 9: Introduction to Unix and Computing on Midway"
+author: ""
+format: html
+date: "June 17 2024"
+code-overflow: wrap
+self-contained: true
+editor: visual
+---
+
+#### This assignment is due by 11:59 p.m. CDT this Sunday. Write your answers in the Ans9_LastFirst_BIOS10007.Rmd file, change the name of the file with your actual first and last name, and submit to Canvas. {style="color:green;"}
+
+[This lab requires access to a Unix command prompt. Mac users may access the "Terminal" application under Applications \> Utilities \> Terminal. Windows 10 users must install a linux subsystem. Please see the end of the lab for more details.]{style="color:red;"}
+
+**Objectives:** In this lab we will learn the basics of **command-line** operations in **Unix**, with a focus on learning how to connect to and interact with remote computer systems. First, we will learn the command-line equivalents of many of the basic file management actions you routinely perform on your own computer. Next, we will learn how to connect to the Midway high performance computing cluster and perform analyses.
+
+[The details of this lab will be important for the next lab and your final project, so be sure to ask questions about anything that is unclear.]{style="color:maroon;"}
+
+[**If you have a PC, please check the information at the end of the lab to install the needed program(s)**]{style="color:blue;"}**.**
+
+## Part 1: Command-line operations in Unix
+
+An **operating system** (OS) describes the suite of software that forms the base of a computer machine. For example, the Windows OS refers to a set of programs that tells your computer how to display features and accept commands to perform various computations. This includes the display of the graphic user interface (GUI) that we are all familiar with, allowing for point-and-click navigation and computation. At their core, most modern OS's (apart from Windows) are derived from the **Unix OS**. In this lab we are going to move one step closer to the Unix OS from our familiar GUI perch. We will interface with Unix through the *shell*, which refers to a program that supplies a command-line interpreter for the user to direct commands to the computer core. The particular shell we will use is the bash shell (standing for **B**ourne-**a**gain **sh**ell), which is the Unix shell you are most likely to encounter in bioinformatics applications.
+
+[Working from the command line is powerful. It allows for the automation of repeated sequences of operations: for example, moving, combining, or extracting data.]{style="color:maroon;"} Many of us have wasted substantial time repeating the same series of point-and-click operations from our computer GUI. The command line gives us the ability to automate this task. Although it takes some upfront investment, this automation is fruitful in the long run, particularly when it encodes a data handling tactic we plan to use many times in the future.
+
+[Working from the command line is also flexible.]{style="color:maroon;"} It can be a very involved process to write a new program that operates in the confines of our Windows or Mac OS GUI. However, it is not difficult to write a program that operates a level deeper at the command line to do things we would otherwise be unable to code.
+
+[Finally, working from the command line is the only way to access remote clusters of high-performance computers.]{style="color:maroon;"} Given the large amount of data in modern biological analyses, external computing resources are becoming a necessity. For the most part, it is impossible to control analyses on external computers through a GUI interface. Through the command line, however, we can login to that computer and perform computations as if we were standing in front of that very same computer. This gives us the power to interact directly with much more powerful computing hardware, from the comfort of wherever our desktop or laptop currently lays. However, working from the command line comes with certain risks. Your computer will do whatever you tell it to do from a command. As such, it is possible to permanently delete files or whole chunks of your hard drive with an errant punctuation mark or character. It is thus important to take care in constructing commands and documenting past actions to avoid making a mistake that "ctrl-Z" has no power to fix.
+
+On your computer, find and open the command prompt:
+
+-   Mac: find **Terminal** under Applications \> Utilities \> Terminal
+-   Windows:
+    -   open **PowerShell** (Windows key + x or search in Start), type `wsl` and press enter
+
+A small window opens, and after a brief login (if asked for), it presents you with a command prompt. The command prompt operates similarly to the console in R. The user types a command in the language interpreted by the command prompt and types 'Enter', and an action is performed. Remember that you can use the up arrow to catch your previous commands.
+
+Here's the obligatory welcoming ceremony for new Unix coders; in your terminal type: "echo Hello, world".
+
+![](./Images/img1.png)
+
+We are now going to explorer how to navigate the file system of your computer from the command line. Knowledge about how the file system is arranged is essential for using a computer at the command line. We all have an intuition as to how file systems are arranged, based on our experience working with "Folders" of files on our traditional computer GUI. The trick now is to learn the commands that correspond to the double clicks and something like "New Folder" buttons, as these GUI features are not available to us when working on a remote device.
+
+There are two directories of special importance for moving through the file system of your computer: your **home directory**, and your **root directory**. [The root directory is the most inclusive folder on the system]{style="color:maroon;"}, containing all other files and folders. If you were clicking the "back arrow" on a GUI folder navigator, the root directory is as far back as you can go. [The home directory is where you are initially logged onto when you open a new command prompt window.]{style="color:maroon"} We can figure out the absolute path to our current location, the home directory, with a simple command: ***pwd*** (present working directory). Throughout the labs and final projects, we'll be moving through different directories. The *pwd* command should be used liberally when working at the command line to ensure you are always in the proper location to access and deposit files of interest.
+
+[**1.1** What is the path to your home directory?]{style="color:green;"}
+
+The *pwd* command returns the **absolute path** to your current directory. [An absolute path originates from the root directory in describing]{style="color:maroon;"} the location of a directory or file. As we saw above, the absolute path starts with a "/". This isolated "/" with no preceding characters signifies our root directory. To get to our *home* directory from the *root* directory, we follow the pathway of subdirectories indicated in the absolute path. If this is unclear, open the Finder/File Explorer and explore how this absolute path tracks with your normal conception of folder structures. For example, on my computer the files for BIOS10007 are nested within my file system. The absolute path to the Lab9 contents on my computer is */Users/Esmael/Documents/BIOS10007/Lab9*.
+
+In contrast to an absolute path, [a **relative path** specifies the location of a directory or file relative to your current location (the working directory).]{style="color:maroon;"} For example, the absolute path to my home directory is "/Users/Esmael". Within *Esmael* folder, I have a folder "scripts" containing a shell script "HideFiles.sh". In this case, the **absolute path** to "HideFiles.sh" would be "/Users/Esmael/scripts/HideFiles.sh". However, given my current directory is *Esmael*, the **relative path** would be
+
+./scripts/HideFiles.sh
+
+[Notice the period placed prior to the first forward slash. This period represents the current directory. If this period were not present, the computer would try to look for a "scripts" folder in the root directory, as an initial forward slash tells the computer to reorient to the root directory.]{style="color:maroon;"}
+
+[**1.2** In the example above, what would be the relative path to "HideFiles.sh" if our present working directory was within the "Users" directory? What would be the relative path if we were currently in the "scripts" folder?]{style="color:green;"}
+
+If I were performing manipulations or analyses on files in this folder from my home directory, it would be a pain to repeatedly type this entire path at the command prompt for every file I access or create. Instead, it would be useful to move my present working directory to the "Lab9" folder. [This is accomplished with the ***cd*** (**c**hange **d**irectory) command.]{style="color:maroon;"}
+
+The *cd* command can take you to whatever absolute path or relative path you specify. **For Mac Terminal**, if you don't supply the *cd* command with a path (i.e. you just type and execute "cd"), the default option is to bring you back to your *home* directory. This can be useful if you "get lost" in your navigation and just want to start over. However, **for Powershell+WSL**, this will bring you all the way to the *root* directory.
+
+**For PowerShell users, if you are trying to access a folder or file with a space in its name, the entire path has to go into quotes (either double quotes as in "x", or single quotes as in 'x'). For example, if my BIOS 10007 folder has a space in the middle, I would write my absolute path the following way:**
+
+![](./Images/img2_2.png)
+
+Other minor syntactical differences exist between Mac Terminal and Windows PowerShell, which will be outlined as they come up. **Please pay attention** and read the lab manual carefully.
+
+My "BIOS10007" folder has other subdirectories, like "Lab10". For example, a quick way to navigate to Lab10 if one is in the Lab9 folder is as follows:
+
+![](./Images/img3.png)
+
+[**1.3** What are the two periods ".." referencing?]{style="color:green;"}
+
+[**1.4** Navigate to your home directory. Now construct a command with "cd" that takes you to your root directory from your home directory. Paste your command in your answer file. What is the name of your root directory?]{style="color:green;"}
+
+[The third command useful for directory navigation is *ls* (list).]{style="color:maroon;"} This command lists the contents of the current working directory. If an absolute or relative path is provided, *ls* will list the contents of the given directory. From your home directory, test out the *ls* command with the following prompts:
+
+*ls*\
+*ls /*\
+*ls ./Desktop*
+
+One tip that will save you time is **tab completion**. When you are referencing a file or directory, you can begin to type its name and hit the `tab` key to complete the name, assuming the letters you have typed so far are unique to a particular file or directory. To explore this behavior, navigate to your home directory. Type "cd Deskt" then press `tab`, and notice how the tab completes the name of the "Desktop" subdirectory. Return to your home directory. Now type "cd D" then `tab`. Notice that nothing happened. This is because two or more directories in your home directory begin with a "D". However, if you press `tab` a second time, the Terminal will echo back to you all of the available options that start with "D." This might include "Desktop," "Documents," and "Downloads." If you complete enough letters for any directory such that it is unique, then press `tab`, Terminal will complete the path.
+
+Similar to R, basic bash functions come with documentation. Explore the documentation of the *ls* command with *man* (for **man**ual):\
+*man ls*
+
+This brings up the manual for the *ls* command. You can **scroll up and down with the arrows, scroll by page with "z" and "w," and exit the manual page by typing "q".**
+
+[**1.5** Using the manual and simply testing commands in your home directory, explain what happens with the following commands, in which additional **options** are passed to *ls* with the "-" character. Note: something like "ls -lS" is equivalent to "ls -l -S". (PowerShell Users: Don't worry about items saying "Permission Denied").]{style="color:green;"}
+
+[*ls -l* (that is the letter "l", not the number 1)]{style="color:green;"}
+
+[*ls -lS*]{style="color:green;"}
+
+[*ls -lt*]{style="color:green;"}
+
+[*ls -ltr*]{style="color:green;"}
+
+[*ls -g*]{style="color:green;"}
+
+Let's introduce the **wildcard** character. In most commands that take a path as an argument, we can use the wildcard character "$*$" to increase the breadth of our search. From our home directory, we can try "ls $*$". This is the broadest wildcard, and will apply the *ls* command to list the contents of all subdirectories in our working directory.
+
+[**1.6** What happens when you try "ls ./D\*" from your home directory?]{style="color:green;"}
+
+Now that we've learned how to navigate directories, let's learn the commands for handling files from the command prompt. For the following exercises, please use the file "pcfb.zip". This zip file contains the files necessary for examples provided in the book [Practical Computing for Biologists](https://practicalcomputing.org) by Haddock and Dunn. The appendix of this book, available on Canvas, contains a reference sheet of most of the common bash commands you will encounter. I encourage you to download this and consult it when conducting the following exercises.
+
+**PowerShell Users, run the following command in your console: `sudo apt install unzip`**. Enter your Unix password when prompted.
+
+The zipped folder was included within your downloaded Lab 9 folder. In the Terminal, navigate to where your "pcfb.zip" file is located, and execute `unzip pcfb-Mac.zip` (for Terminal) or `unzip pcfb-PC.zip` (for PowerShell). This will unpack the zip file and create several subdirectories.
+
+[**1.7** What are the subdirectories that are newly created from the "pcfb.zip" file? What is the largest size file in the "examples" subdirectory?]{style="color:green;"}
+
+Let's explore how to add and remove new directories. Change directories to "sandbox". Notice that there is just one folder called "null" (you can check it with the *ls* command). Execute the command `mkdir myDirectory`, and notice the addition of a new folder within "sandbox" (*ls -lF*). Now execute `rmdir myDirectory` and notice the disappearance of your directory. By default, *rmdir* is conservative and will only allow you to delete a directory that has no file contents. [However, you need to be very careful with the *rmdir* (and the equivalent *rm* for removing files), because these commands are not like moving a file to the "Trash" where it could be recovered later. **These commands remove directories or files permanently**.]{style="color:maroon;"}
+
+Similarly the `rm` (**r**e**m**ove) command is used to permanently delete a file from your computer. Its usage is simple, for example: `rm myScript.sh`. [**As mentioned before, be careful in using this command as files deleted with `rm` cannot be recovered!**]{style="color:red;"}
+
+How about copying files? Let's copy the file "structure_1ema.pdb" from the "examples" folder to "sandbox". [The command for copying files is "cp", which takes two arguments: the relative or absolute path to a file of interest to be copied, and the relative or absolute path of the directory to where the file should be copied to.]{style="color:maroon;"} For us, this second argument would be something like "./" since we are currently in the "sandbox" directory. We can also rename the copied file at this step if we want (for example, if we were copying a file into the same directory as the original), by specifying a file name in the second argument for example: "./newfilename.txt". [A similar command to *cp* is "mv" (move).]{style="color:maroon;"} This command follows the same structure as *cp*, but instead of placing a duplicated file into the new location, it moves the file (and potentially renames it).
+
+[**1.8** Create a folder called `Mypcfb` and then`onstruct a command to **copy** the protein file structure_1ema.pdb from the`examples`folder to that folder. Then construct a command to **move** the newly duplicated file from`Mypcfb`to the`sandbox\` folder. Paste both commands in your answer file.]{style="color:green;"}
+
+There are several ways to look at or edit the contents of a text file from the shell. First, let's explore the program `less`. We can investigate our protein file by executing `less structure_1ema.pdb`.
+
+The protein structure file contains various descriptions at the beginning of the file, including how the structure was obtained experimentally. The last part of the file lists all of the atoms of the protein and their three-dimensional coordinates. This is the portion that is read by a program to construct a three-dimensional model of the molecule.
+
+[**1.9** What protein is represented in this file, and from what organism? How many atoms are present in the protein structure? *Hint: TER does not count as an atom.*]{style="color:green;"}
+
+The program `less` only allows us to read the contents of a file, but we cannot make changes. There are several programs for file manipulation at the command line—we will use `nano` for this purpose. We could edit the protein file by executing `nano structure_1ema.pdb`. The keystrokes for file navigation in `nano` differs from `less`, but they are indicated at the bottom of the nano window (`^X` corresponds to simultaneously pressing `control` and `X`).
+
+Type `q` to get out of the `less` function.
+
+The `nano` program can also be used to [create a new text file]{style="color:purple;"} by supplying a new filename as the argument to `nano`. Execute: `nano myScript.sh`. Here, we are creating a new text file with a `.sh` extension, indicating that we are going to turn it into an **executable bash script**.
+
+In the new `nano` window, type the following two lines of code to define our script:\
+`#! /bin/bash`\
+`echo “Hello, world!”`
+
+This first line contains a symbol called a **shebang**. The shebang tells the command line interpreter what program to use to interpret the subsequent lines of code. In this case, we follow the shebang with the absolute path to our *bash* program, telling the command line to treat the rest of the document as commands executed in a bash shell. The rest of the code defines what our script will do. Exit the nano window by pressing `ctrl + X`, and when asked if you want to save, type `Y`.
+
+Ideally, if we run this script (using the `./` command), we would get the following output:
+
+![](./Images/img4_4.png)
+
+However, most of you would get the following error:
+
+![](./Images/img4.png)
+
+[In order to execute the contents of a file from the Terminal, this file must have the proper **permissions** to be executed.]{style="color:maroon;"} The current permissions of a file are listed in the extended output of the `ls -l` command we used before. The first column of this output indicates the various permissions a file can take. We are interested in the 2nd, 3rd, and 4th positions out of the ten characters of this shorthand. These characters indicate whether the file is allowed to be read (**r**), written to (**w**), or executed by (**x**) by the current user (you). If one of these symbols is replaced by a dash, it means this permission is not granted.
+
+[**1.10** What permissions are initially present for the myScript.sh file?]{style="color:green;"}
+
+In order to give the current user (**u**) permission to execute (**x**) myScript.sh, execute the `chmod` (**ch**ange **mod**e) command: `chmod u+x myScript.sh`. The `u+x` nomenclature says to add the **x** permission to the user. We could construct other `chmod` commands to remove permissions (`u-x`), or change permissions for various other groups of users who might encounter our script. If we check the file again with `ls -l`, we can see that this file is now executable, and can be run as follows:
+
+![](./Images/img5.png)
+
+## Part 2: Working on Midway
+
+For this part you will need to be logged in to Midway. Once you login to Midway, it is as if you are now sitting at a keyboard directly in front of the Midway computer cluster. You are initially logged into your home directory on Midway. In order to connect to Midway you need to use the `ssh` command. For example my login command is
+
+`ssh haddadian@midway3.rcc.uchicago.edu`
+
+`haddadian` is my username and my password is my CNET password.
+
+**Windows users may use WinSCP to access Midway and to download any files. To install a Linux subsystem, see the end of this document.**
+
+[**2.1** Within your home directory on Midway, create a new subdirectory titled "BIOS10007" using the *mkdir* command, and one called "Lab9" under it. Navigate to this new folder, and determine its absolute path. Paste all the commands you used in your answer file.]{style="color:green;"}
+
+[Our new `Lab9` folder is currently empty; however, we want to upload four files to this directory: `Lab9Source.R`, `ORF1-1.cpp`, `job-submit.sh`, and `Mus_musculus_Chr1.fasta`, which are available in the folder called `Upload` within the archive of Lab 9 files. To upload these files to Midway, open up a new command prompt window or tab **for your local computer (not on Midway)**. We are going to transfer these files to Midway using the `scp` command (**s**ecure **c**o**p**y), which is used to both upload files to a remote computer and to download the results. The scp command has the same usage as `cp`. The only difference is that one of the file paths refers to a file or directory on your local computer where you are executing the `scp` command, while the other references the absolute path to where the file is being deposited or downloaded in the remote computer. In order to upload all four files to Midway simultaneously, I would execute the following based on my folder names, and enter my password when prompted:]{style="color:maroon;"}
+
+`scp ~/Documents/BIOS10007/Labs/Lab9_BIOS10007_S2024/Upload/* haddadian@midway2.rcc.uchicago.edu:~/BIOS10007/Lab9`
+
+[**2.2** Use `scp` commands (either per file or one command with a wildcard) to upload the four files to your `Lab9` directory on Midway, and paste these commands into your lab report. Return to Midway, and check that the four files are now present in the `Lab9` directory.]{style="color:green;"}
+
+`Lab9Source.R` and `ORF1-1.cpp` contain an ORF finder algorithm written using a hybrid of R and C++, which allows us to conduct ORF analyses several orders of magnitude faster than our loop-based algorithms written in R. This is important because today we will look to find all the possible open reading frames in Chromosome 1 of the mouse genome, which spans nearly two hundred million bases. If we were to attempt this computation on our personal machines using the suggested implementation from our previous lab, then it would take on the order of several hours to complete. The mouse gene sequence that we will analyze today is stored in the file `Mus_musculus_Chr1.fasta`.
+
+[**2.3** Instead of printing out the completed list of ORFs in R, which we would not be able to see easily from the command line, this script generates two `.csv` tables for ORFs in both the forward and reverse directions. What function in the `Lab9Source.R` file is used to generate these outputs?]{style="color:green;"}
+
+The other file we uploaded is the `job-submit.sh` script. Instead of simply executing a command on the **node** to which we have logged in (the **login node**), we instead use a job submission script to direct our computational analysis to one of several **compute nodes** on the computer cluster.
+
+![](./Images/img10.png)
+
+The last 5 lines, which do not start with `#SBATCH`, contains the commands to execute the R script `Lab9Source.R`. All the SLURM parameters are declared with `#SBATCH`, followed by additional definitions that tell the SLURM scheduler how much allocation of what computer resources you request for this job.
+
+Explanations for these parameters:
+
+`--job-name=test:` Sets the name of the job to "test"\
+`--time=00:00:01:` Reserves the computing resources for 1 second (or less if program completes before 1 second).\
+`--nodes=1:` Requests 1 compute node.\
+`--account= :` Specifies the name of the account from which the ‘service units’ (the ‘currency’ that accounts for computing resource expenditures) used by this job is going to be charged. Our account name is `bios10007`\
+`--mem-per-cpu=8192:` Requests 8192 MB (\~8 GB) of memory (RAM) per core.\
+
+[**2.4** Explain why you would log into dedicated login nodes and submit jobs to dedicated compute nodes, instead of doing both on the same node. (If you can't think of a reason, execute the command `squeue`: This will show you the current queue (line of jobs) running or waiting to be executed.)]{style="color:green;"}
+
+Every user or group on Midway has a certain allocation of computer resources available for use. This is measured in **node hours**, the number of hours of computation that are used up by submitting jobs to compute nodes.
+
+**We now need to open the job submission script and change some values. When you submit each job to the compute nodes, you will need to use a job submit script that tells the compute node scheduler how many nodes (processors) you need, how much time your job will take to run, the name of your job, and the actual commands to execute. Open up the job submit script with `nano`.**
+
+[**2.5** Change the following components of the job submit script:]{style="color:green;"}
+
+[**a)** The job name is set to "test", which is terribly not descriptive. Choose a better name for this job and change the `job-name` parameter accordingly. What name did you choose? (Note: DO NOT PUT SPACES IN YOUR NAME; you can use underscore \*\*\_\*\*)]{style="color:green;"}
+
+[**b)** The submit script currently requests one second of compute time. This is not quite enough time to complete the job. Change the `time` parameter to request five minutes of compute time, and paste the complete line here.]{style="color:green;"}
+
+[**c)** The account parameter is currently blank. Enter our class account `bios10007` so the scheduler knows which account to pull the resource allocation from. **Make sure that you do not add any unnecessary spaces.** Paste the final version of the line here.]{style="color:green;"}
+
+[**2.6** What bash command is executed to run the `Lab9Source.R` script?]{style="color:green;"}
+
+With these parts done, we can now submit the job for Midway to run.
+
+To send our job to the compute nodes, we use the `sbatch` command, and its syntax is `sbatch job-submit.sh` (or whatever job submission name you choose to use in the future).
+
+**Execute this command now on your job submission script to submit your first supercomputer computation!** If everything goes well, your job should start running. You can check the status of your job by entering `squeue -u CNET`; You should see something like the following:
+
+![](./Images/img7.png)
+
+The "R" in the "ST" column means that the job is currently running. Other options that you might see are "PD" (pending) or "C" (completed). If the job has completed, the job will very soon disappear from the queue.
+
+After a while, your job should have produced two files, with names something like `Mus_musculus_Chr1-1.csv` and `Mus_musculus_Chr1-2.csv`. These files contain the results of our ORF analysis, where the Chr1-1 is the forward strand, and Chr1-2 is the reverse. We will need to copy this data from Midway to our own laptops to perform some basic analysis, using the same `scp` command we used above.[Windows users can also use WinSCP to download the files, explained at the end of the document.]{style="color:purple"}This is not necessary, but WinSCP does offer a better way to visualize Unix.
+
+[**2.7.** Use `scp` to retrieve `Mus_musculus_Chr1-1.csv` and `Mus_musculus_Chr1-2.csv` from Midway. Provide the command you used in your answer file]{style="color:green"}
+
+[**2.8.** Load the tables into R using `read.csv()` and examine the structure of the data by printing out the first few lines with `head()`.]{style="color:green"}
+
+[**2.9.** How many ORFs with a length of at least 300 codons (100 residue proteins) were detected in the forward and reverse directions of Chromosome 1 of the Mus musculus genome?]{style="color:green"}
+
+[Chromosome 1 of the Mus musculus reference genome is currently known to contain 2,687 genes that code for 4,731 proteins.]{style="color:blue"}
+
+[**2.10**]{style="color:green"}
+
+[**a)** How can more than one protein be encoded by any given gene? Hint: think about introns and exons]{style="color:green"}
+
+[**b)** How does this figure compare to the number of ORFs that you found? Propose a reason for any discrepancy.]{style="color:green"}
+
+### Programs for Windows Users
+
+The command prompt on Windows is called PowerShell, but it uses a different set of commands than standard Unix command prompts. Therefore we will enable Windows Subsystem for Linux. During this setup, restart your computer when asked. You will also be asked to download an app from Microsoft Store. Please consult a TA for help if you need. More information on connecting from Windows is also provided on the [RCC website](https://rcc.uchicago.edu/docs/connecting/index.html#connecting). The directions below was taken from [this website](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
+1)  Go to Control Panel (you can search in Start) \> Programs \> Turn Windows features on or off
+2)  Scroll down on the pop-up window. Click on "Windows Subsystem for Linux" to check it, click OK
+3)  You may be asked to restart your computer; go ahead and restart
+4)  Press `Windows key + x` on your keyboard, and click on "Windows Powershell (Admin)"
+5)  In the command prompt that opens, type in the code below and hit enter: `dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart`
+6)  You may be asked to restart your computer; go ahead and restart
+7)  Go to Microsoft Store (https://aka.ms/wslstore) and search Ubuntu. Install the app on your computer. Ubuntu is a "Linux distribution", or an operating system that will do all the hard work for us. It may take several minutes; if it takes longer than 10 minutes, consult a TA
+8)  Once Ubuntu is installed, open it. It will ask you to create a userid and password. It doesn't matter what you make it to be
+9)  Press `Windows key + x` on your keyboard, and click on "Windows Powershell", not the admin version. You can also search in the Start Menu "PowerShell". Type `wsl` and hit enter.
+10) You can now use the same Unix commands in your PowerShell command prompt. Whenever it asks you for a password, it is referring to the password you created in step 8.
+
+In order to connect to **Midway**, Window users have several options.
+
+1)  You can log in directly from PowerShell + wsl. You can have several command prompts open at the same time, so log in through one PowerShell window for accessing Midway and keep open a regular PowerShell window for accessing your PC
+2)  You can use Ubuntu. Log in the same way.
+3)  You can install the program PuTTY [here](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html). PuTTY will ask you to start the session with your Midway log-in information. After connecting to Midway through PuTTY, you will be presented with the same Unix command prompt that you accessed in lab.
+4)  You can also download a secure file transfer client program called [WinSCP](http://winscp.net/eng/index.php). Once again, the RCC website provides details about [connecting to Midway through WinSCP](https://rcc.uchicago.edu/docs/data-transfer/index.html#winscp-gui-for-windows-clients). This program allows you to have one window with one side showing connection to your PC and the other side showing connection to Midway, and directly transfer files like you would in files explorer.
+5)  Alternatively, as a more permanent solution, you could download the program [Cygwin](https://cygwin.com/install.html), which gives you a Unix command prompt on your local Windows machine.

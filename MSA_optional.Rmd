@@ -1,0 +1,381 @@
+---
+title: "MSA_optional"
+date: "2023-06-09"
+output: html_document
+---
+
+## The Center Star algorithm
+
+Let's now build our own multiple sequence alignment algorithm. We will implement a very simple approximation algorithm for multiple sequence alignment called the **Center Star** algorithm. To understand how it works let $S_1$, $S_2$, $\ldots$, $S_k$ be $k$ sequences to be aligned. **Also, let the distance $D(S_i,S_j)$ between two sequences be the number of mismatches or gaps between the 2 sequences at each position** (where one sequence has a gap and the other doesn't, or one sequence has a different amino acid than the other). For example, if we have two strings "ABCBA" and "ACBCA" then, their distance is 3 because there are 3 letters that are not equal to each other (2nd through 4th). Now, for the lab, the distance between two sequences (no matter what their lengths are) is just the distance between their sequences after they are aligned under an optimal global alignment algorithm. So, consider the sequences "VTLWGK" and "LTKWHGTV". To find their distances for the Center Star alignment algorithm you would first do:
+
+```{r}
+suppressMessages(library(Biostrings)) #silently loads Biostrings functions
+source("pairAlign_cpp.R")
+pairAlign("VTLWGK","LTKWHGTV", substitutionMatrix = "BLOSUM50", gapOpening = -2, gapExtension=-2, type="global")
+```
+
+*And then compute the distance of this alignment, which is 5 (check this for yourself).*
+
+**Step 1: Compute the Distance of Every Possible Pair of Sequences**
+
+The **Center Star** algorithm starts by computing the distance $D(S_i, S_j)$ of every possible pair of sequences $S_i$ and $S_j$ among the $k$ given sequences. Then, it finds the sequence $S_c$ that minimizes the sum $\sum_{j \neq i} D(S_i,S_j)$ (the sum for fixed $i$) among all $i \in \{1,2,\ldots, k\}$ (that is, the sequence that minimizes the total distance to all other sequences), which is the so called *Center* of the star. The multiple sequence alignment then is the set of pairwise optimal alignments between any of the $k$ given sequences and $S_c$.  
+
+For example, consider the sequences 
+
+```{r}
+S_1 <- "VCLWTK"
+S_2 <- "LKTGV"
+S_3 <- "MVLGVTK"
+```
+
+Then, notice that:
+
+```{r}
+pairAlign(S_1, S_2, substitutionMatrix="BLOSUM50", gapOpening = -2, gapExtension=-2, type="global")
+pairAlign(S_1, S_3, substitutionMatrix="BLOSUM50", gapOpening = -2, gapExtension=-2, type="global")
+pairAlign(S_2, S_3, substitutionMatrix="BLOSUM50", gapOpening = -2, gapExtension=-2, type="global")
+```
+
+So that
+
+```{r}
+D_12 <- 5 
+D_13 <- 4
+D_23 <- 5
+#note that these are the DISTANCES and not the scores of the alignments
+```
+
+Then, we want to find the sequence that minimizes the total sum of its pairwise distance to all other sequences. These are given by:
+
+```{r}
+Sum_1 <- D_12 + D_13 #align sequences 2 and 3 to 1
+Sum_2 <- D_12 + D_23 #align sequences 1 and 3 to 2
+Sum_3 <- D_13 + D_23 #align sequences 1 and 2 to 3
+print(Sum_1)
+print(Sum_2)
+print(Sum_3)
+```
+
+so that
+
+```{r}
+min(Sum_1, Sum_2, Sum_3)
+```
+
+Just now, we computed the distance of every possible pair of sequences and found the combination of pairs that MINIMIZES the distance... by hand.  Let's now try coding this in R!
+
+<span style="color:purple">For the following exercises, we will be working with the following list of sequences:</span>
+
+```{r}
+sequences <- c("MVTCHQQQ", "MVRCH", "MVTCH", "QQQMVTCH", "MVTQQQCH")
+```
+
+First off, there is the issue of generating pairwise alignments between sequences. We could simply arrange our sequences along each margin of a symmetrical matrix, then generate pairwise alignments for each element of the matrix. This could work, but then we are doing extra work in two ways:
+
+1) The diagonal of the matrix involves aligning each sequence against itself, which is wasteful
+2) The two triangles of the matrix mirror each other, so even when you ignore the diagonal, you are doing twice the necessary work.
+
+So the takeaway from this is that we need to implement a sort of **handshake problem**, where each sequence is aligned with each other sequence exactly once. The code creates a function called `uniqueAlignedCombo` below which does this. Look it over carefully and make sure you understand
+
+```{r}
+
+uniqueAlignedCombo <- function(sequences, substitutionMatrix, gapOpening, gapExtension){
+  n <- length(sequences)
+  alignmentPatterns <- character()
+  alignmentSubjects <- character()
+  k <- 1
+  
+  for(i in 1:(n-1)) { 
+      for(j in (i + 1):n) { 
+          alignmentPatterns[k] <- pairAlign(sequences[i], sequences[j], substitutionMatrix = substitutionMatrix, gapOpening = gapOpening, gapExtension = gapExtension)[[1]]
+          alignmentSubjects[k] <- pairAlign(sequences[i], sequences[j], substitutionMatrix = substitutionMatrix, gapOpening = gapOpening, gapExtension = gapExtension)[[2]]
+          k <- k + 1 
+      }
+  }
+  return(list(alignmentPatterns = alignmentPatterns, 
+              alignmentSubjects = alignmentSubjects))
+}
+
+alignmentSubjects <- uniqueAlignedCombo(sequences,"BLOSUM62", -8,-2)[["alignmentSubjects"]]
+
+alignmentPatterns<- uniqueAlignedCombo(sequences,"BLOSUM62", -8,-2)[["alignmentPatterns"]]
+
+```
+
+<span style="color:green"> 2.2 Describe how the nested for loop in the `uniqueAlignedCombo` function in the example above iterates over the vector `sequences` such that unique pairwise matchups are outputted. Also describe the structure of how the pairwise matchups are stored into the `alignmentPatterns` and `alignmentSubjects` elements of the outputted list. </span>
+
+
+For our Center-Star analysis, our vector contains the **distance** between any two given sequences, where the distance is the number of mismatches after the pairwise alignment.  
+
+<span style="color:green"> 2.3a  **Recall that the distance $D(S_i,S_j)$ between two sequences is the number of mismatches or gaps between the 2 sequences**. What would be the distance between the following two sequences? <br>
+
+Q V T A - - - L R L Q
+<br>
+Q L T A T T T A R L K
+\span
+
+<span style="color:green"> 2.3b Fill out the function definition below that takes in 2 sequences (in the form of 2 vectors of individual characters) and outputs the distance between the 2 sequences. The output should be one numeric value. \span
+
+```{r, eval = F}
+distance <- function(){
+  
+}
+
+#if your function is correct, the distance should be 3
+distance(c("Q", "T", "-", "V", "A", "T"),
+         c("T", "T", "A", "V", "A", "-"))
+```
+
+<span style="color:green"> 2.4 In the following code, the 5 lines with comments have not been completed. Follow the directions in each line to complete these lines. In part 2.2, you did the pairwise alignments and stored the alignment outputs into two vectors 'alignmentPatterns' and 'alignmentSubjects'. For each pairwise alignment, calculate the distance between the aligned sequences, and store the distances in a vector. (Hint you will need to use the `strsplit()` function. Look back at Lab 7 to review how to use this function.)  \span
+
+```{r, eval = F}
+distanceOfAllPairs<- function(alignmentPatterns,alignmentSubjects){
+  
+  n <- length(sequences)
+  a <- length(alignmentPatterns)
+  # a numeric vector of length a named distVector
+  
+  for (i in 1:a) {
+    
+    patterns <- #pull out one sequence from a pairing of sequences and split it into a vector of individual characters
+    subjects<- #pull out the other sequence from a pairing of sequences and split it into a vector of individual characters
+      
+    #find the distance between patterns and subjects and store it into the i index in distVector
+  }
+  
+  #return distVector
+
+}
+
+
+#check your work by looking at the output of the following lines
+alignmentPatterns #recall we created alignmentPatterns and alignmentSubjects using the `uniqueAlignedCombo` function
+alignmentSubjects
+distVector<- distanceOfAllPairs(alignmentPatterns,alignmentSubjects)
+distVector
+```
+
+**Step 2: Determine the Center Sequence**
+
+The next step is to turn this vector of pairwise distances into into a matrix. As it turns out, due to the nature of our iteration, **the vector is in just the right order to populate the lower triangle of our desired matrix column by column**. The following function utilizes the functions you wrote above to take in 2 vectors (alignmentPatterns and alignmentSubjects which are created using the `uniqueAlignedCombo()` function provided above) and creates a distance matrix. The comments in the last few lines explain how we can turn our distance vector into a distance matrix.
+
+Note: This function builds upon the outputs from the helper functions that you previously created: `distance()`and `distanceOfAllPairs()`. Writing helper functions is great practice in coding; it can help you organize your workflow, and make your function definitions less convoluted.
+```{r, eval = F}
+distMatrix <- function(alignmentSubjects, alignmentPatterns, substitutionMatrix, gapOpening, gapExtension){
+
+  distVector <- distanceOfAllPairs(alignmentPatterns,alignmentSubjects)
+  n <- length(sequences)
+  
+  
+  distMatrix = matrix(0, nrow = n, ncol = n) #initialize distMatrix with zeros
+  dimnames(distMatrix) <- list(sequences, sequences) #label columns and rows according to the corresponding sequence
+  distMatrix[lower.tri(distMatrix)] <- distVector #populate lower triangle with distances between sequences
+  distMatrix <- distMatrix + t(distMatrix) #sum with own transposition to mirror values across diagonal
+  return(distMatrix)
+}
+
+
+#Example output
+sequences
+distMatrix(alignmentSubjects,alignmentPatterns,"BLOSUM62", -8,-2)
+```
+
+We want to use our distance matrix to find the center sequence, remembering that the center sequence is the sequence[c] with the minimum total sum of its pairwise distance to all other sequences. With the creation of our distance matrix above, this task becomes quite simple. Notice that the first column contains the all of distances between the first sequence "MVTCHQQQ" and every other sequence (the distance between "MVTCHQQQ" and itself is of course, 0). If we took the sum of the first column, this would tell us the total distance between the first sequence and every other sequence. The second column contains the all of the distances between the second sequence "MVRCH" and every other sequence. If we took the sum of the second column, this would tell us the total distance between the second sequence and every other sequence.
+
+Thus, if we wanted to find the sequence with the minimum total sum of pairwise distances to all other sequences, we would take the sum of each column in our distance matrix. The column with the small sum would contain our center sequence. 
+
+
+<span style="color:green"> 2.5 In this question you will create a function `findCenter` that calls upon the 2 helper functions,`uniqueAlignedCombo()`  and `distMatrix()`, created above. This function ties together the work we've done so far by calling both helper functions at once to achieve a bigger goal (figuring out which sequences is the center sequence). Because this function definition has calls to helper functions "wrapped" up inside of it, we can call this type of function a "wrapper function". **In the following function definition, you should determine which sequence is the center sequence and you should output the index of the center sequence (one numeric output).** </span>
+
+```{r}
+findCenter<- function(sequences, substitutionMatrix, gapOpening, gapExtension){
+
+  
+}
+
+center<-findCenter(sequences,"BLOSUM62", -8,-2) #center should equal to 3
+sequences[center]#you should get "MVTCH"
+```
+
+
+### Multiple Sequence Alignment Using Center Star algorithm
+
+Now you've created a series of helper functions and a final function `findCenter()` that gives you the index of the center sequence. Recall that the center sequence is the sequence we're going to align all the other sequences to. Today, you'll be creating your final product: a multiple sequence alignment.
+
+The code below contains a function `buildMSA()` that does this process for us by taking in specifically formatted data and outputting a named matrix containing a Center-Star multiple sequence alignment. The expected input consists of two list objects and an integer.
+
+```{r}
+source("pairAlign_cpp.R")
+# INPUT ARGUMENTS
+# patterns : list of char vectors
+#            each vector patterns[[i]] contains the version of the CENTER sequence that arises from the pairwise alignment between the center sequence and sequence[i]
+# subjects : list of char vectors
+#            each vector subjects[[i]] contains the alignment of sequence[i] after a pairwise alignment with the center sequence
+# center   : integer
+#            index of the sequence in the original sequence list that is the center. 
+buildMSA <- function(patterns, subjects, center) {
+    MSA <- rbind(patterns[[1]], subjects[[1]])
+    for(i in 2:length(patterns)) {
+        j = 1 #index in new row
+        k = 1 #index in alignment of center sequence to sequence i
+        m = 1 #column index of MSA
+        maxLength = ncol(MSA) + length(patterns[[i]])
+        newRow = character(maxLength)
+        while(k <= length(patterns[[i]]) && m <= ncol(MSA)) {
+            if(patterns[[i]][k] == MSA[1, m]) {
+                newRow[j] <- subjects[[i]][k]
+                j <- j + 1
+                k <- k + 1
+                m <- m + 1
+            } else if(MSA[1, m] == "-") {
+                newRow[j] <- "-"
+                j <- j + 1
+                m <- m + 1
+            } else if(patterns[[i]][k] == "-") {
+                if(m == 1) {
+                    MSA <- cbind(rep("-", nrow(MSA)), MSA)
+                } else {
+                    MSA <- cbind(MSA[, 1:(m-1)], rep("-", nrow(MSA)), MSA[, m:ncol(MSA)])
+                }
+                newRow[j] <- subjects[[i]][k]
+                m <- m + 1
+                j <- j + 1
+                k <- k + 1
+            }
+        }
+        while(k <= length(patterns[[i]])) {
+            MSA <- cbind(MSA, rep("-", nrow(MSA)))
+            newRow[j] <- subjects[[i]][k]
+            k <- k + 1
+            j <- j + 1
+        }
+        while(m <= ncol(MSA)) {
+            newRow[j] <- "-"
+            m <- m + 1
+            j <- j + 1
+        }
+        newRow <- newRow[1:(m - 1)]
+        MSA <- rbind(MSA, newRow)
+    }
+    rownames(MSA) <- c("    Center:", paste0("Sequence ", 1:(nrow(MSA)), ":")[-center])
+    colnames(MSA) <- 1:ncol(MSA)
+    return(MSA)
+}
+```
+
+<span style="color:green"> 3.1 <br>
+a. In your own words, describe the inputs and output of the `buildMSA()` function. <br>
+b. In the code above, for each additional sequence considered, a new row of the matrix gets progressively constructed, then it is appended to the matrix once completed. What happens when a gap occurs in the alignment between the center sequence and sequence i that does not occur in the multiple sequence alignment up to this point? (Hint: look at the condition `else if(patterns[[i]][k] == "-")`)\span <br>
+
+Now we just need to get our data into the format that `buildMSA()` expects to receive. Note that yesterday, you found the patterns and subjects, though these aren't in the format that `buildMSA()` uses.  We'll need some extra functions to do this, but not to worry we provide them below for you:
+
+The first function, `createAlignmentMatrices`, that we need to reformat our data is provided below. This function is very similar to the `uniqueAlignedCombo` that we created above. This function outputs a list containing 2 matrices. In each matrix, each element (all of the elements are strings and are in quotations) contains one of sequences after it has been aligned against another sequences and the appropriate gaps have been inserted. The row and column names (not in quotations) show which 2 sequences were aligned to create the value in each box. In the first matrix, the first column shows different version of the sequence in the column name; each value shows how the sequence in the column name is altered (aka if/where gaps are added) when it is aligned to every other sequence. In the second matrix, the first column shows what happens to the sequences in the row names when they are aligned against the sequence in the column name. Study the output below to make sure you understand how the code works.
+
+```{r}
+sequences <- c("MVTCHQQQ", "MVRCH", "MVTCH", "QQQMVTCH", "MVTQQQCH") #remember that we'll be working with these sequences
+
+createAlignmentMatrices <- function(seq, substitutionMatrix, gapOpening, gapExtension){
+  n <- length(seq)
+  alignmentPatternsmat <- matrix("", n, n)
+  alignmentSubjectsmat <- alignmentPatternsmat
+  
+  ## Generate alignments
+  for(i in 1:(n-1)) {
+      for(j in (i+1):n) {
+          alignment <- pairAlign(seq[i], seq[j], substitutionMatrix = substitutionMatrix, gapOpening = gapOpening, gapExtension = gapExtension)
+          
+          alignmentPatternsmat[j, i] <- alignment[[1]]
+          alignmentSubjectsmat[i, j] <- alignment[[1]]
+          alignmentSubjectsmat[j, i] <- alignment[[2]]
+          alignmentPatternsmat[i, j] <- alignment[[2]]
+      }
+  }
+   
+   dimnames(alignmentPatternsmat) <- list(seq, seq)
+   dimnames(alignmentSubjectsmat) <- list(seq, seq)
+  return(list(alignmentPatterns = alignmentPatternsmat, 
+              alignmentSubjects = alignmentSubjectsmat))
+}
+
+
+
+alignedSeqMat1<- createAlignmentMatrices(sequences,"BLOSUM62", -8,-2)[["alignmentPatterns"]]
+alignedSeqMat2<- createAlignmentMatrices(sequences,"BLOSUM62", -8,-2)[["alignmentSubjects"]]
+
+print("first output matrix: ")
+alignedSeqMat1
+print("second output matrix:")
+alignedSeqMat2
+```
+
+Using the `createAlignmentMatrices` function created above, we can now easily format our data into the format needed for the `buildMSA` function. As a reminder, we have already build a function named `findCenter` which outs the index of the center sequences. The following function takes in the outputs from `findCenter` and `createAlignmentMatrices` to output the alignment results from every pairing involving the center sequence. 
+
+```{r}
+formatForbuildMSA <- function(patternsMat,subjMat, center){ 
+  patternsCenter<- patternsMat[ ,center][-center]
+  subjCenter<- subjMat[ ,center][-center]
+  
+  patternMSA <- strsplit(patternsCenter, "")
+  subjectMSA <- strsplit(subjCenter, "")
+ return(list(patterns = patternMSA, 
+             subjects = subjectMSA))
+}
+center<- 3
+formatForbuildMSA(alignedSeqMat1,alignedSeqMat2, center)  
+```
+
+<span style="color:green"> 3.2a Go line-by-line through the function definition for `formatForbuildMSA` above and add comments explain what each line is doing. \span  
+
+<span style="color:green"> 3.2b Explain how the output of the function is formatted. \span
+
+The outputs of `formatForbuildMSA()` will be the subjects and patterns inputs for `buildMSA()`.  Now, you have everything you need to use the `buildMSA()` function!
+
+<span style="color:green"> 3.3 call the `formatForbuildMSA()` function again and assign it's outputs to variables.  Use the outputs of `formatForbuildMSA()` to call the function `buildMSA()`. \span
+
+<span style="color:green"> 3.4 Now, let's put everything together. Write a function `centerStar()` that takes in a list of sequences and uses `buildMSA()` as well as the various other helper functions you have written to output the multiple sequence alignment. We've left spaces for you to copy and paste your helper functions from yesterday's lab. Test this sequence on the globin protein sequences contained in globins.fasta, which have been loaded into R for you as `globins`, which is a vector of concatenated uppercase strings. Again, use "BLOSUM62", gapOpening = -8, and gapExtension = -2. \span  
+
+```{r,eval= FALSE}
+#### PASTE uniqueAlignedCombo() BELOW ####
+
+
+
+
+
+
+#### PASTE distance() BELOW ####
+
+
+
+
+
+#### PASTE distanceOfAllPairs() BELOW ####
+
+
+
+
+
+
+#### PASTE distMatrix() BELOW ####
+
+
+
+
+
+
+
+#### PASTE findCenter() BELOW ####
+
+
+
+
+
+
+#### now, fill in the centerStar() function ####
+centerStar <- function(sequences, substitutionMatrix, gapOpening, gapExtension) {
+    #Your code here
+    return()
+}
+
+globins <- unlist(seqinr::read.fasta("globins.fasta", seqtype = "AA", as.string = T))
+
+```
